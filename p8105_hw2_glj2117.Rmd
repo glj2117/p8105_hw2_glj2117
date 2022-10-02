@@ -8,6 +8,7 @@ date: '2022-10-02'
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(readxl)
+library(tidyr)
 ```
 
 ## Problem 1
@@ -43,9 +44,33 @@ omit rows that do not include dumpster-specific data
 round the number of sports balls to the nearest integer and converts the result to an integer variable (using as.integer)
 
 ```{r}
-mr_trash_wheel = read_excel("Trash-Wheel-Collection-Totals-7-2020-2.xlsx", sheet = "Mr. Trash Wheel", range = "A2:N535") %>% 
+mr_trash_wheel = read_excel("Trash-Wheel-Collection-Totals-7-2020-2.xlsx", sheet = "Mr. Trash Wheel", range = "A2:N534") %>% 
   janitor::clean_names() %>% 
-  filter(!is.na(dumpster))
-```
+  drop_na(dumpster) %>% 
+  mutate(sports_balls = round(sports_balls)) 
 
+```
+Use a similar process to import, clean, and organize the data for Professor Trash Wheel, and combine this with the Mr. Trash Wheel dataset to produce a single tidy dataset. To keep track of which Trash Wheel is which, you may need to add an additional variable to both datasets before combining.
+
+```{r}
+prof_trash_wheel = read_excel("Trash-Wheel-Collection-Totals-7-2020-2.xlsx", sheet = "Professor Trash Wheel", range = "A2:N117") %>% 
+  janitor::clean_names() %>% 
+  drop_na(dumpster) %>% 
+  mutate(sports_balls = round(sports_balls)) %>% 
+  mutate(dataset = "prof")
+ 
+mr_trash_wheel = mr_trash_wheel %>% 
+  mutate(dataset = "mr")
+ 
+
+trash_data = 
+  full_join(mr_trash_wheel, prof_trash_wheel) %>% 
+  arrange(dumpster)
+   
+
+
+```
+Write a paragraph about these data; you are encouraged to use inline R. Be sure to note the number of observations in the resulting dataset, and give examples of key variables. For available data, what was the total weight of trash collected by Professor Trash Wheel? What was the total number of sports balls collected by Mr. Trash Wheel in 2020?
+
+The joined dataset includes `r nrow(trash_data)` observations on 453 dumpsters and associated key variables, such as date of observation, weight and volume of trash, and amount of plastic bottles, polystyrene, cigarette butts, glass bottles, grocery bags, chip bags, and sports balls in the trash. The `dataset` variable denotes if the data was collected by Mr. Trash Wheel (mr) or Professor Trash Wheel (prof).The total weight of trash collected by Professor Trash Wheel is `r trash_data %>% filter(dataset == "prof") %>% pull(weight_tons) %>% sum()`. Additionally, the total number of sports balls collected by Mr. Trash Wheel in 2020 was `r mr_trash_wheel %>% filter(year == 2020) %>% pull(sports_balls) %>% sum()`. 
 
