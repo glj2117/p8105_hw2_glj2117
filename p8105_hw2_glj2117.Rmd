@@ -33,6 +33,56 @@ How many stations are ADA compliant?
 What proportion of station entrances / exits without vending allow entrance?
 Reformat data so that route number and route name are distinct variables. How many distinct stations serve the A train? Of the stations that serve the A train, how many are ADA compliant?
 
+As it stands, these data are not "tidy": route number should be a variable, as should route. That is, to obtain a tidy dataset we would need to convert `route` variables from wide to long format. This will be useful when focusing on specific routes, but may not be necessary when considering questions that focus on station-level variables. 
+
+The following code chunk selects station name and line, and then uses `distinct()` to obtain all unique combinations. As a result, the number of rows in this dataset is the number of unique stations.
+
+```{r}
+trans_ent %>% 
+  select(station_name, line) %>% 
+  distinct
+```
+
+The next code chunk is similar, but filters according to ADA compliance as an initial step. This produces a dataframe in which the number of rows is the number of ADA compliant stations. 
+
+```{r}
+trans_ent %>% 
+  filter(ada == TRUE) %>% 
+  select(station_name, line) %>% 
+  distinct
+```
+
+To compute the proportion of station entrances / exits without vending allow entrance, we first exclude station entrances that do not allow vending. Then, we focus on the `entry` variable -- this logical, so taking the mean will produce the desired proportion (recall that R will coerce logical to numeric in cases like this).
+
+```{r}
+trans_ent %>% 
+  filter(vending == "NO") %>% 
+  pull(entry) %>% 
+  mean
+```
+
+Lastly, we write a code chunk to identify stations that serve the A train, and to assess how many of these are ADA compliant. As a first step, we tidy the data as alluded to previously; that is, we convert `route` from wide to long format. After this step, we can use tools from previous parts of the question (filtering to focus on the A train, and on ADA compliance; selecting and using `distinct` to obtain dataframes with the required stations in rows).
+
+```{r}
+trans_ent %>% 
+  pivot_longer(
+    route1:route11,
+    names_to = "route_num",
+    values_to = "route") %>% 
+  filter(route == "A") %>% 
+  select(station_name, line) %>% 
+  distinct
+
+trans_ent %>% 
+  pivot_longer(
+    route1:route11,
+    names_to = "route_num",
+    values_to = "route") %>% 
+  filter(route == "A", ada == TRUE) %>% 
+  select(station_name, line) %>% 
+  distinct
+```
+
 
 ## Problem 2
 
@@ -67,10 +117,27 @@ trash_data =
   full_join(mr_trash_wheel, prof_trash_wheel) %>% 
   arrange(dumpster)
    
-
-
 ```
 Write a paragraph about these data; you are encouraged to use inline R. Be sure to note the number of observations in the resulting dataset, and give examples of key variables. For available data, what was the total weight of trash collected by Professor Trash Wheel? What was the total number of sports balls collected by Mr. Trash Wheel in 2020?
 
 The joined dataset includes `r nrow(trash_data)` observations on 453 dumpsters and associated key variables, such as date of observation, weight and volume of trash, and amount of plastic bottles, polystyrene, cigarette butts, glass bottles, grocery bags, chip bags, and sports balls in the trash. The `dataset` variable denotes if the data was collected by Mr. Trash Wheel (mr) or Professor Trash Wheel (prof).The total weight of trash collected by Professor Trash Wheel is `r trash_data %>% filter(dataset == "prof") %>% pull(weight_tons) %>% sum()`. Additionally, the total number of sports balls collected by Mr. Trash Wheel in 2020 was `r mr_trash_wheel %>% filter(year == 2020) %>% pull(sports_balls) %>% sum()`. 
+
+```
+##Problem 3
+
+First, clean the data in pols-month.csv. Use separate() to break up the variable mon into integer variables year, month, and day; replace month number with month name; create a president variable taking values gop and dem, and remove prez_dem and prez_gop; and remove the day variable.
+
+```{r}
+
+pols_month = read_csv("pols-month.csv") %>% 
+  separate(col = 'mon', into = c('year', 'month', 'day'), sep = '-') %>% 
+   mutate(month = recode(month, "01" = "January", "02" = "February", "03" = "March", "04" = "April", "05" = "May", "06" = "June", "07" = "July", "08" = "August", "09" = "September", "10" = "October", "11" = "November", "12" = "December")) %>% 
+   mutate(day = NULL) %>%
+   mutate(president = if_else(prez_gop == 1, "gop", "dem")) %>% 
+   mutate(prez_gop = NULL, prez_dem = NULL)
+   
+
+```
+
+
 
