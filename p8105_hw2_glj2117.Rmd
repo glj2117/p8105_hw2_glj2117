@@ -122,7 +122,7 @@ trash_data =
 ```
 Write a paragraph about these data; you are encouraged to use inline R. Be sure to note the number of observations in the resulting dataset, and give examples of key variables. For available data, what was the total weight of trash collected by Professor Trash Wheel? What was the total number of sports balls collected by Mr. Trash Wheel in 2020?
 
-The joined dataset includes `r nrow(trash_data)` observations on 547 dumpsters and associated key variables, such as date of observation, weight and volume of trash, and amount of plastic bottles, polystyrene, cigarette butts, glass bottles, grocery bags, chip bags, and sports balls in the trash. The `dataset` variable denotes if the data was collected by Mr. Trash Wheel (mr) or Professor Trash Wheel (prof).The total weight of trash collected by Professor Trash Wheel is `r trash_data %>% filter(dataset == "prof") %>% pull(weight_tons) %>% sum()`. Additionally, the total number of sports balls collected by Mr. Trash Wheel in 2020 was `r trash_data %>% filter(year == 2020) %>% pull(sports_balls) %>% sum(), na.rm = TRUE`. 
+The joined dataset includes `r nrow(trash_data)` observations on 547 dumpsters and associated key variables, such as date of observation, weight and volume of trash, and amount of plastic bottles, polystyrene, cigarette butts, glass bottles, grocery bags, chip bags, and sports balls in the trash. The `dataset` variable denotes if the data was collected by Mr. Trash Wheel (mr) or Professor Trash Wheel (prof).The total weight of trash collected by Professor Trash Wheel is `r trash_data %>% filter(dataset == "prof") %>% pull(weight_tons) %>% sum()` tons. Additionally, the total number of sports balls collected by Mr. Trash Wheel in 2020 was `r mr_trash_wheel %>% filter(year == 2020) %>% pull(sports_balls) %>% sum()`. 
 
 ```
 ##Problem 3
@@ -141,7 +141,6 @@ pols_month = read_csv("pols-month.csv") %>%
   unite("merged_date", year:month, remove = FALSE)
 
 ```
-In 1974, there are 5 months where the value for "prez_gop" is 2 instead of the expected 0 or 1. This is likely because there were two presidents during the single term (Nixon and Ford). However, they were both republicans so should be coded as prez_gop.
 
 Second, clean the data in snp.csv using a similar process to the above. For consistency across datasets, arrange according to year and month, and organize so that year and month are the leading columns.
 ```{r}
@@ -183,7 +182,8 @@ mutate(merged_date = NULL)
 ```
 Write a short paragraph about these datasets. Explain briefly what each dataset contained, and describe the resulting dataset (e.g. give the dimension, range of years, and names of key variables).
 
-The `pols_month` dataset included data about political seats by party on a monthly basis from 1947-2015. The `snp` dataset included snp500 market close by month from 1950-2015. 
+The original `pols_month` dataset included data about political seats by party on a monthly basis from 1947-2015. In 1974, there are 5 months where the value for "prez_gop" is 2 instead of the expected 0 or 1. This is likely because there were two presidents during the single term (Nixon and Ford). However, they were both republicans so should be coded as prez_gop.
+The `snp` dataset included snp500 market close by month from 1950-2015. 
 The `unemployment` dataset included unemployment rates by month from 1948-2015.
 The resulting combined dataset (`snp_pols_unemployment`) includes `r nrow(snp_pols_unemployment)` observations accross `r ncol(snp_pols_unemployment)` variables. The data range from the years 1948-2015. Key variables (besides date) include numbers of Republican governors, senators, and representatives (`gov_gop`, `sen_gop`, `rep_gop` and the same metrics for Democrat politicians (`gov_dem`, `sen_dem`, `rep_dem`). Additionaly, the party of the `president`, SNP500 closing (`close`) and `unemployment` rate are also included in this dataset.
 
