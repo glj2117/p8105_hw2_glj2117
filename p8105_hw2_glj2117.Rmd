@@ -122,7 +122,7 @@ trash_data =
 ```
 Write a paragraph about these data; you are encouraged to use inline R. Be sure to note the number of observations in the resulting dataset, and give examples of key variables. For available data, what was the total weight of trash collected by Professor Trash Wheel? What was the total number of sports balls collected by Mr. Trash Wheel in 2020?
 
-The joined dataset includes `r nrow(trash_data)` observations on 453 dumpsters and associated key variables, such as date of observation, weight and volume of trash, and amount of plastic bottles, polystyrene, cigarette butts, glass bottles, grocery bags, chip bags, and sports balls in the trash. The `dataset` variable denotes if the data was collected by Mr. Trash Wheel (mr) or Professor Trash Wheel (prof).The total weight of trash collected by Professor Trash Wheel is `r trash_data %>% filter(dataset == "prof") %>% pull(weight_tons) %>% sum()`. Additionally, the total number of sports balls collected by Mr. Trash Wheel in 2020 was `r mr_trash_wheel %>% filter(year == 2020) %>% pull(sports_balls) %>% sum()`. 
+The joined dataset includes `r nrow(trash_data)` observations on 547 dumpsters and associated key variables, such as date of observation, weight and volume of trash, and amount of plastic bottles, polystyrene, cigarette butts, glass bottles, grocery bags, chip bags, and sports balls in the trash. The `dataset` variable denotes if the data was collected by Mr. Trash Wheel (mr) or Professor Trash Wheel (prof).The total weight of trash collected by Professor Trash Wheel is `r trash_data %>% filter(dataset == "prof") %>% pull(weight_tons) %>% sum()`. Additionally, the total number of sports balls collected by Mr. Trash Wheel in 2020 was `r trash_data %>% filter(year == 2020) %>% pull(sports_balls) %>% sum(), na.rm = TRUE`. 
 
 ```
 ##Problem 3
@@ -135,16 +135,28 @@ pols_month = read_csv("pols-month.csv") %>%
   separate(col = 'mon', into = c('year', 'month', 'day'), sep = '-') %>% 
    mutate(month = recode(month, "01" = "January", "02" = "February", "03" = "March", "04" = "April", "05" = "May", "06" = "June", "07" = "July", "08" = "August", "09" = "September", "10" = "October", "11" = "November", "12" = "December")) %>% 
    mutate(day = NULL) %>%
-   mutate(president = if_else(prez_gop == 1, "gop", "dem")) %>% 
-   mutate(prez_gop = NULL, prez_dem = NULL)
+   mutate(president = if_else(prez_dem == 0, "gop", "dem")) %>% 
+   mutate(prez_gop = NULL, prez_dem = NULL) %>% 
+   mutate(year = as.numeric(year)) %>% 
+  unite("merged_date", year:month, remove = FALSE)
+
 ```
+In 1974, there are 5 months where the value for "prez_gop" is 2 instead of the expected 0 or 1. This is likely because there were two presidents during the single term (Nixon and Ford). However, they were both republicans so should be coded as prez_gop.
+
 Second, clean the data in snp.csv using a similar process to the above. For consistency across datasets, arrange according to year and month, and organize so that year and month are the leading columns.
 ```{r}
 snp = read_csv("snp.csv") %>%
   separate(col = 'date', into = c('month', 'day', 'year'), sep = '/') %>% 
    mutate(month = recode(month, "1" = "January", "2" = "February", "3" = "March", "4" = "April", "5" = "May", "6" = "June", "7" = "July", "8" = "August", "9" = "September", "10" = "October", "11" = "November", "12" = "December")) %>% 
    mutate(day = NULL) %>%
-  select("year", "month", "close")
+  select("year", "month", "close") %>% 
+  mutate(year_prefix = if_else(year < 22, 2000, 1900)) %>% 
+  mutate(year = as.numeric(year)) %>% 
+  mutate(year = year + year_prefix) %>% 
+  mutate(year_prefix = NULL) %>% 
+  unite("merged_date", year:month, remove = FALSE) %>% 
+  mutate(year = NULL, month = NULL)
+
 ```
 Third, tidy the unemployment data so that it can be merged with the previous datasets. This process will involve switching from “wide” to “long” format; ensuring that key variables have the same name; and ensuring that key variables take the same values.
 ```{r}
@@ -153,13 +165,20 @@ pivot_longer(Jan:Dec,
 names_to = 'month',
 values_to = 'unemployment'
 ) %>% 
-janitor::clean_names() 
+janitor::clean_names() %>% 
+unite("merged_date", year:month, remove = FALSE) %>% 
+mutate(year = NULL, month = NULL)
 
 ```
 Join the datasets by merging snp into pols, and merging unemployment into the result.
 ```{r}
 
-snp_pols = left_join(pols_month, snp, by = date)
+snp_pols = 
+  left_join(pols_month, snp, by = "merged_date") 
+
+snp_pols_unemployment =
+left_join(snp_pols, unemployment, by = "merged_date") %>% 
+mutate(merged_date = NULL)
 
 ```
 
