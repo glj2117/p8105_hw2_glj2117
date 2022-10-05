@@ -181,6 +181,10 @@ left_join(snp_pols, unemployment, by = "merged_date") %>%
 mutate(merged_date = NULL)
 
 ```
+Write a short paragraph about these datasets. Explain briefly what each dataset contained, and describe the resulting dataset (e.g. give the dimension, range of years, and names of key variables).
 
+The `pols_month` dataset included data about political seats by party on a monthly basis from 1947-2015. The `snp` dataset included snp500 market close by month from 1950-2015. 
+The `unemployment` dataset included unemployment rates by month from 1948-2015.
+The resulting combined dataset (`snp_pols_unemployment`) includes `r nrow(snp_pols_unemployment)` observations accross `r ncol(snp_pols_unemployment)` variables. The data range from the years 1948-2015. Key variables (besides date) include numbers of Republican governors, senators, and representatives (`gov_gop`, `sen_gop`, `rep_gop` and the same metrics for Democrat politicians (`gov_dem`, `sen_dem`, `rep_dem`). Additionaly, the party of the `president`, SNP500 closing (`close`) and `unemployment` rate are also included in this dataset.
 
 
