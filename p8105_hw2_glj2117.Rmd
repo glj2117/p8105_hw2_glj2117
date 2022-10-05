@@ -38,7 +38,7 @@ As it stands, these data are not "tidy": route number should be a variable, as s
 The following code chunk selects station name and line, and then uses `distinct()` to obtain all unique combinations. As a result, the number of rows in this dataset is the number of unique stations.
 
 ```{r}
-trans_ent %>% 
+transit_data %>% 
   select(station_name, line) %>% 
   distinct
 ```
@@ -46,7 +46,7 @@ trans_ent %>%
 The next code chunk is similar, but filters according to ADA compliance as an initial step. This produces a dataframe in which the number of rows is the number of ADA compliant stations. 
 
 ```{r}
-trans_ent %>% 
+transit_data %>% 
   filter(ada == TRUE) %>% 
   select(station_name, line) %>% 
   distinct
@@ -55,7 +55,7 @@ trans_ent %>%
 To compute the proportion of station entrances / exits without vending allow entrance, we first exclude station entrances that do not allow vending. Then, we focus on the `entry` variable -- this logical, so taking the mean will produce the desired proportion (recall that R will coerce logical to numeric in cases like this).
 
 ```{r}
-trans_ent %>% 
+transit_data %>% 
   filter(vending == "NO") %>% 
   pull(entry) %>% 
   mean
@@ -64,7 +64,7 @@ trans_ent %>%
 Lastly, we write a code chunk to identify stations that serve the A train, and to assess how many of these are ADA compliant. As a first step, we tidy the data as alluded to previously; that is, we convert `route` from wide to long format. After this step, we can use tools from previous parts of the question (filtering to focus on the A train, and on ADA compliance; selecting and using `distinct` to obtain dataframes with the required stations in rows).
 
 ```{r}
-trans_ent %>% 
+transit_data %>% 
   pivot_longer(
     route1:route11,
     names_to = "route_num",
@@ -73,7 +73,7 @@ trans_ent %>%
   select(station_name, line) %>% 
   distinct
 
-trans_ent %>% 
+transit_data %>% 
   pivot_longer(
     route1:route11,
     names_to = "route_num",
@@ -94,28 +94,30 @@ omit rows that do not include dumpster-specific data
 round the number of sports balls to the nearest integer and converts the result to an integer variable (using as.integer)
 
 ```{r}
-mr_trash_wheel = read_excel("Trash-Wheel-Collection-Totals-7-2020-2.xlsx", sheet = "Mr. Trash Wheel", range = "A2:N534") %>% 
+mr_trash_wheel = read_excel("Trash Wheel Collection Data.xlsx", sheet = "Mr. Trash Wheel", range = "A2:N549") %>% 
   janitor::clean_names() %>% 
-  drop_na(dumpster) %>% 
   mutate(sports_balls = round(sports_balls)) 
 
 ```
 Use a similar process to import, clean, and organize the data for Professor Trash Wheel, and combine this with the Mr. Trash Wheel dataset to produce a single tidy dataset. To keep track of which Trash Wheel is which, you may need to add an additional variable to both datasets before combining.
 
 ```{r}
-prof_trash_wheel = read_excel("Trash-Wheel-Collection-Totals-7-2020-2.xlsx", sheet = "Professor Trash Wheel", range = "A2:N117") %>% 
+prof_trash_wheel = read_excel("Trash Wheel Collection Data.xlsx", sheet = "Professor Trash Wheel", range = "A2:M96") %>% 
   janitor::clean_names() %>% 
-  drop_na(dumpster) %>% 
-  mutate(sports_balls = round(sports_balls)) %>% 
   mutate(dataset = "prof")
  
 mr_trash_wheel = mr_trash_wheel %>% 
-  mutate(dataset = "mr")
- 
+  mutate(dataset = "mr") 
+
+mr_trash_wheel = 
+  mr_trash_wheel %>% 
+  mutate("year" = as.numeric(year))
+  
 
 trash_data = 
   full_join(mr_trash_wheel, prof_trash_wheel) %>% 
-  arrange(dumpster)
+  arrange(dumpster) %>% 
+  mutate("as.numeric(year)" = NULL)
    
 ```
 Write a paragraph about these data; you are encouraged to use inline R. Be sure to note the number of observations in the resulting dataset, and give examples of key variables. For available data, what was the total weight of trash collected by Professor Trash Wheel? What was the total number of sports balls collected by Mr. Trash Wheel in 2020?
@@ -135,7 +137,29 @@ pols_month = read_csv("pols-month.csv") %>%
    mutate(day = NULL) %>%
    mutate(president = if_else(prez_gop == 1, "gop", "dem")) %>% 
    mutate(prez_gop = NULL, prez_dem = NULL)
-   
+```
+Second, clean the data in snp.csv using a similar process to the above. For consistency across datasets, arrange according to year and month, and organize so that year and month are the leading columns.
+```{r}
+snp = read_csv("snp.csv") %>%
+  separate(col = 'date', into = c('month', 'day', 'year'), sep = '/') %>% 
+   mutate(month = recode(month, "1" = "January", "2" = "February", "3" = "March", "4" = "April", "5" = "May", "6" = "June", "7" = "July", "8" = "August", "9" = "September", "10" = "October", "11" = "November", "12" = "December")) %>% 
+   mutate(day = NULL) %>%
+  select("year", "month", "close")
+```
+Third, tidy the unemployment data so that it can be merged with the previous datasets. This process will involve switching from “wide” to “long” format; ensuring that key variables have the same name; and ensuring that key variables take the same values.
+```{r}
+unemployment = read_csv("unemployment.csv") %>% 
+pivot_longer(Jan:Dec, 
+names_to = 'month',
+values_to = 'unemployment'
+) %>% 
+janitor::clean_names() 
+
+```
+Join the datasets by merging snp into pols, and merging unemployment into the result.
+```{r}
+
+snp_pols = left_join(pols_month, snp, by = date)
 
 ```
 
